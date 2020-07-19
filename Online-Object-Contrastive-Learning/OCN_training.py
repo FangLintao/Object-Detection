@@ -3,7 +3,7 @@
 
 from utils.DataLoading import  Datareading
 from model.OCN import OCN
-from model.Metric_Loss import Metric_Loss,Nearest_Neighbor
+from model.Loss import Metric_Loss,Nearest_Neighbor
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
