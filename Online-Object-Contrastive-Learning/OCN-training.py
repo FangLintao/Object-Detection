@@ -56,8 +56,8 @@ def train(num_epoch, learning_rate = 2.5e-4, model_dir="./saved_models", tensorb
         # reading training data
         train_data = datareading.data_reading(trainset[folder],transform)
         val_data = datareading.data_reading(valset['Frame_video-(160, 200).mp4'],transform)
-        length = len(train_data)
-
+        train_length = len(train_data)
+        val_length = len(val_data)
         network = OCN(freeze_FasterRCNN = True,criterion=0.9).cuda()
         optimizer = optim.SGD( filter(lambda p: p.requires_grad, network.parameters()), lr=learning_rate ,momentum=0.9, weight_decay=1e-4 )
         Metric_LOSS = Metric_Loss()
@@ -67,7 +67,7 @@ def train(num_epoch, learning_rate = 2.5e-4, model_dir="./saved_models", tensorb
         for epoch in tqdm(range(num_epoch),ascii=True, desc="epoch at {} ->>".format(folder)):
             train_loss = 0
             train_count = 0
-            for anchor in range(length-1):
+            for anchor in range(train_length-1):
                 anchor_image = train_data[anchor].cuda()
                 optimizer.zero_grad()
                 anchor_objects, anchor_features ,_ ,anchor_labels = network(anchor_image)
@@ -76,7 +76,7 @@ def train(num_epoch, learning_rate = 2.5e-4, model_dir="./saved_models", tensorb
                 del anchor_objects, anchor_labels
                 me_count = 0
                 me_loss = 0
-                for item in range(anchor+1,length):
+                for item in range(anchor+1,train_length):
                     image_B = train_data[item].cuda()
                     _, features_B ,_ ,_ = network(image_B)
                     M_loss = Metric_LOSS.metric_loss(anchor_features,features_B)
@@ -94,10 +94,9 @@ def train(num_epoch, learning_rate = 2.5e-4, model_dir="./saved_models", tensorb
             tensorboard_Training_Loss.write_episode_data(epoch,{"Train_Loss":train_loss})
             
             with torch.no_grad():
-                length = len(val_data)
                 val_loss = 0
                 val_count = 0
-                for anchor in range(length-1):
+                for anchor in range(val_length):
                     anchor_image = val_data[anchor].cuda()
                     objects, features ,_ ,labels = network(anchor_image)
                     ce_loss = CE_loss(objects, labels.cuda())
